@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="تجهيز العمليات">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>تجهيز ما قبل العمليات</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Readex+Pro:wght@500;600;700&display=swap">
+<style>
+/* Layout: one narrow working column; list of cases grouped by operation family, editor as a single scroll with a sticky action bar */
+:root{
+  --bg:#EEF2F0; --surface:#FFFFFF; --sunk:#F6F8F7; --ink:#15231F; --muted:#5B6B65; --line:#D6DEDA;
+  --accent:#0E6B5C; --accent-ink:#FFFFFF; --accent-soft:#DCEFEA;
+  --ok:#1D7A46; --ok-bg:#E3F3EA; --bad:#B42318; --bad-bg:#FCEBE9; --warn:#9A5B00; --warn-bg:#FFF3DE;
+  --paper:#FFFFFF; --paper-ink:#15231F; --paper-muted:#5B6B65; --paper-line:#CCD6D2; --paper-accent:#0E6B5C;
+  --paper-bad:#B42318; --paper-bad-bg:#FCEBE9; --paper-ok:#1D7A46; --paper-ok-bg:#E3F3EA; --paper-sunk:#F3F6F5;
+  --f-display:"Readex Pro","IBM Plex Sans Arabic",Tahoma,sans-serif;
+  --f-body:"IBM Plex Sans Arabic",Tahoma,"Segoe UI",sans-serif;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1613; --surface:#16211D; --sunk:#111B18; --ink:#E4EDE9; --muted:#93A49E; --line:#283631;
+  --accent:#42B8A0; --accent-ink:#06231D; --accent-soft:#183A33;
+  --ok:#57C887; --ok-bg:#123222; --bad:#FF8273; --bad-bg:#3A1714; --warn:#F2AE4B; --warn-bg:#3A2A10; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1613; --surface:#16211D; --sunk:#111B18; --ink:#E4EDE9; --muted:#93A49E; --line:#283631;
+  --accent:#42B8A0; --accent-ink:#06231D; --accent-soft:#183A33;
+  --ok:#57C887; --ok-bg:#123222; --bad:#FF8273; --bad-bg:#3A1714; --warn:#F2AE4B; --warn-bg:#3A2A10; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 150px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:760px;margin:0 auto}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;font-weight:600}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:14px 10px;display:flex;align-items:center;gap:12px}
+.top h1{font-size:20px;flex:1;min-width:0;overflow-wrap:anywhere}
+.top .sub{display:block;font-family:var(--f-body);font-size:12px;color:var(--muted);font-weight:500}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 14px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;text-decoration:none;color:var(--ink)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.danger.armed{background:var(--bad);color:var(--surface)}
+.btn[disabled]{opacity:.55;cursor:progress}
+.link{background:none;border:0;color:var(--accent);font-weight:600;padding:0;text-decoration:underline;text-underline-offset:3px;font-size:13px}
+.link.bad{color:var(--bad)}
+
+/* summary */
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-block:4px 14px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px}
+.stat b{display:block;font-family:var(--f-display);font-size:24px;font-variant-numeric:tabular-nums;line-height:1.2}
+.stat span{font-size:12px;color:var(--muted)}
+.stat.bad b{color:var(--bad)} .stat.ok b{color:var(--ok)}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px;scrollbar-width:none}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:500;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.group-h{display:flex;align-items:baseline;justify-content:space-between;margin:18px 2px 8px;font-size:15px;color:var(--muted)}
+.group-h h2{font-size:15px;color:var(--ink)}
+.cards{display:grid;gap:8px}
+.card{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;text-align:start;width:100%;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;border-inline-start:4px solid var(--bad)}
+.card.ready{border-inline-start-color:var(--ok)}
+.card .nm{font-weight:600;font-size:16px;min-width:0;overflow-wrap:anywhere}
+.card .meta{grid-column:1/2;font-size:13px;color:var(--muted);min-width:0}
+.pill{grid-row:1/3;grid-column:2;font-size:12px;font-weight:600;border-radius:999px;padding:4px 10px;white-space:nowrap}
+.pill.bad{background:var(--bad-bg);color:var(--bad)} .pill.ok{background:var(--ok-bg);color:var(--ok)}
+.tag{font-size:11px;background:var(--warn-bg);color:var(--warn);border-radius:4px;padding:1px 6px;margin-inline-start:6px;font-weight:600;vertical-align:middle}
+.empty{text-align:center;color:var(--muted);padding:40px 12px;border:1px dashed var(--line);border-radius:var(--r)}
+.note{font-size:13px;color:var(--muted);margin:14px 0 0}
+
+/* editor */
+.sec{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.sec>h2{font-size:16px;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid .full{grid-column:1/-1}
+@media (max-width:480px){.grid{grid-template-columns:1fr}}
+label.f,.f{display:grid;gap:4px;font-size:13px;color:var(--muted);font-weight:500;min-width:0}
+.in{width:100%;border:1px solid var(--line);background:var(--sunk);border-radius:8px;padding:9px 10px;font-size:15px;color:var(--ink);min-width:0}
+textarea.in{min-height:70px;resize:vertical}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{flex:1;border:0;background:var(--sunk);padding:9px 6px;font-size:14px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.toggles{display:flex;flex-wrap:wrap;gap:6px}
+.tg{border:1px solid var(--line);background:var(--sunk);border-radius:999px;padding:6px 12px;font-size:13px}
+.tg[aria-pressed="true"]{background:var(--warn-bg);border-color:var(--warn);color:var(--warn);font-weight:600}
+.alarm{display:flex;gap:10px;align-items:flex-start;border-radius:var(--r);padding:12px 14px;margin-bottom:12px;font-weight:500}
+.alarm.bad{background:var(--bad-bg);color:var(--bad);border:1px solid var(--bad)}
+.alarm.ok{background:var(--ok-bg);color:var(--ok);border:1px solid var(--ok)}
+.alarm .ic{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:14px;background:currentColor}
+.alarm .ic span{color:var(--surface)}
+.alarm .tx{min-width:0}
+.alarm small{display:block;font-weight:400;opacity:.9;margin-top:2px}
+.invh{font-size:12px;letter-spacing:.04em;color:var(--muted);font-weight:600;margin:14px 0 6px}
+.invh:first-child{margin-top:0}
+.row{display:grid;grid-template-columns:1fr auto;gap:8px 10px;align-items:center;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--surface)}
+.row+.row{margin-top:6px}
+.row.miss{background:var(--bad-bg);border-color:var(--bad)}
+.row .n{min-width:0}
+.row .n b{display:block;font-weight:600;font-size:14px;unicode-bidi:plaintext;text-align:right;overflow-wrap:anywhere}
+.row .n i{font-style:normal;font-size:12px;color:var(--muted)}
+.row.miss .n b::after{content:" ناقص";color:var(--bad);font-size:11px;font-weight:700;unicode-bidi:isolate}
+.row .opt{font-size:11px;color:var(--warn);font-weight:600}
+.row .ctag{font-size:11px;color:var(--accent);font-weight:600}
+.row .seg{min-width:0}
+.row .seg button{padding:6px 9px;font-size:12px}
+.row .seg button.m[aria-pressed="true"]{background:var(--bad);color:var(--surface)}
+.row .seg button.o[aria-pressed="true"]{background:var(--ok);color:var(--surface)}
+.row .seg button.x[aria-pressed="true"]{background:var(--muted);color:var(--surface)}
+.extra{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0}
+.extra .res{flex:1 1 100%}
+@media (max-width:420px){.row{grid-template-columns:1fr}.row .seg{width:100%}}
+.up{position:relative;display:inline-flex;align-items:center;gap:4px;border:1px dashed var(--accent);color:var(--accent);background:var(--surface);border-radius:999px;padding:4px 12px;font-size:13px;font-weight:600;cursor:pointer;overflow:hidden}
+.up input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:40px}
+.up.busy{opacity:.6}
+.att{display:inline-flex;align-items:center;gap:4px;background:var(--accent-soft);border-radius:8px;padding:3px 3px 3px 8px;font-size:12.5px;max-width:100%;min-width:0}
+.att a{color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;gap:6px;min-width:0}
+.att .fn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px;unicode-bidi:plaintext}
+.att img{width:28px;height:28px;object-fit:cover;border-radius:4px;background:var(--sunk)}
+.att .ty{font-size:10px;font-weight:700;background:var(--accent);color:var(--accent-ink);border-radius:3px;padding:1px 4px}
+.att button{border:0;background:none;color:var(--muted);font-size:17px;line-height:1;padding:2px 7px}
+.addc{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line)}
+.addrow{display:grid;grid-template-columns:1fr auto auto;gap:8px}
+@media (max-width:480px){.addrow{grid-template-columns:1fr auto}.addrow input{grid-column:1/-1}}
+.instr h3{font-size:14px;margin:12px 0 4px}
+.instr h3:first-child{margin-top:0}
+.instr ul{margin:0;padding-inline-start:20px}
+.instr li{margin:3px 0}
+.instr .dg h3{color:var(--bad)}
+.opts{display:grid;gap:8px}
+.chk{display:flex;gap:8px;align-items:center;font-size:14px}
+.chk input{width:18px;height:18px;accent-color:var(--accent);flex:none}
+.autocomment{background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:14px;margin-bottom:10px;white-space:pre-line}
+.bar{position:fixed;inset:auto 0 0 0;z-index:6;background:var(--surface);border-top:1px solid var(--line);
+  padding-block:10px calc(10px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.bar .wrap{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.msg{margin:10px 0 0;font-size:13px;padding:10px 12px;border-radius:8px;background:var(--warn-bg);color:var(--warn);width:100%}
+.preview-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--sunk);padding:10px}
+
+/* the PDF sheet (always paper colors) */
+.sheet{background:var(--paper);color:var(--paper-ink);font-family:var(--f-body);font-size:12.5px;line-height:1.55;padding:28px 30px;direction:rtl;min-width:620px}
+.sheet.capture{position:fixed;left:-10000px;top:0;width:794px}
+.sh-head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid var(--paper-accent);padding-bottom:10px;margin-bottom:14px;gap:16px}
+.sh-head .dr{font-family:var(--f-display);font-size:18px;color:var(--paper-accent);font-weight:600}
+.sh-head .dr small{display:block;font-family:var(--f-body);font-size:11px;color:var(--paper-muted);font-weight:400}
+.sh-head .ttl{text-align:left;font-family:var(--f-display);font-size:16px;font-weight:600}
+.sh-head .ttl small{display:block;font-family:var(--f-body);font-size:11px;color:var(--paper-muted);font-weight:400}
+.sh-pt{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--paper-line);border-radius:6px;overflow:hidden;margin-bottom:12px}
+.sh-pt div{padding:6px 9px;border-bottom:1px solid var(--paper-line);border-inline-start:1px solid var(--paper-line)}
+.sh-pt div.w2{grid-column:span 2}
+.sh-pt span{display:block;font-size:10px;color:var(--paper-muted)}
+.sh-pt b{font-weight:600}
+.sh-status{padding:8px 12px;border-radius:6px;font-weight:600;margin-bottom:12px;font-size:13px}
+.sh-status.bad{background:var(--paper-bad-bg);color:var(--paper-bad);border:1px solid var(--paper-bad)}
+.sh-status.ok{background:var(--paper-ok-bg);color:var(--paper-ok);border:1px solid var(--paper-ok)}
+.sheet h3{font-size:13px;margin:12px 0 6px;color:var(--paper-accent)}
+.sheet table{width:100%;border-collapse:collapse}
+.sheet th,.sheet td{border:1px solid var(--paper-line);padding:5px 8px;text-align:right;vertical-align:top}
+.sheet th{background:var(--paper-sunk);font-size:11px;color:var(--paper-muted);font-weight:600}
+.sheet td.en{unicode-bidi:plaintext;text-align:start}
+.sheet tr.m td{background:var(--paper-bad-bg);color:var(--paper-bad);font-weight:600}
+.sheet td.st{width:72px;text-align:center;font-weight:600}
+.sheet td.ac{width:52px;text-align:center}
+.sheet .ok{color:var(--paper-ok)}
+.sheet ul,.sheet ol{margin:0;padding-inline-start:18px}
+.sheet li{margin:1px 0}
+.sh-box{border:1px solid var(--paper-line);border-radius:6px;padding:8px 12px;margin-top:10px}
+.sh-box h3{margin-top:0}
+.sh-box.dg{border-color:var(--paper-bad)}
+.sh-box.dg h3{color:var(--paper-bad)}
+.sh-comment{border:2px solid var(--paper-ink);border-radius:6px;padding:10px 12px;margin-top:14px}
+.sh-comment h3{margin-top:0;color:var(--paper-ink)}
+.sh-comment p{margin:0;white-space:pre-line}
+.sh-foot{margin-top:18px;border-top:1px solid var(--paper-line);padding-top:8px;font-size:10.5px;color:var(--paper-muted);display:flex;justify-content:space-between;gap:12px}
+@media (prefers-reduced-motion:no-preference){.card,.btn,.chip{transition:background .15s,border-color .15s}}
+</style>
+</head>
+<body>
+
+<div class="wrap" id="app"></div>
+<div id="capture"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script>
+"use strict";
+/* ---------- investigation library ---------- */
+const INV={
+ cbc:{n:"CBC",a:"صورة دم كاملة",t:"lab"},
+ coag:{n:"PT / INR / PTT",a:"وظائف التجلط",t:"lab"},
+ renal:{n:"Serum creatinine & urea",a:"وظائف الكلى",t:"lab"},
+ lytes:{n:"Na / K",a:"أملاح الدم",t:"lab"},
+ rbs:{n:"Random blood sugar",a:"سكر عشوائي",t:"lab"},
+ hba1c:{n:"HbA1c",a:"السكر التراكمي (مريض سكر)",t:"lab"},
+ lft:{n:"ALT / AST / Albumin",a:"وظائف الكبد والألبومين",t:"lab"},
+ ca:{n:"Serum calcium / ALP",a:"كالسيوم وإنزيم ALP",t:"lab"},
+ viral:{n:"HBsAg / HCV Ab / HIV",a:"الفيروسات",t:"lab"},
+ ua:{n:"Urine analysis",a:"تحليل بول كامل",t:"lab"},
+ uc:{n:"Urine culture & sensitivity",a:"مزرعة بول (يجب أن تكون معقمة)",t:"lab"},
+ bg:{n:"Blood group & Rh",a:"فصيلة الدم",t:"lab"},
+ xm2:{n:"Cross-match 2 units",a:"حجز كيسين دم",t:"lab"},
+ xm4:{n:"Cross-match 4 units",a:"حجز ٤ أكياس دم",t:"lab"},
+ psa:{n:"PSA (total ± free)",a:"دلالات البروستاتا",t:"lab"},
+ cyto:{n:"Urine cytology",a:"خلايا البول",t:"lab"},
+ path:{n:"Pathology report (biopsy / TURBT)",a:"تقرير الباثولوجي",t:"lab"},
+ bhcg:{n:"Pregnancy test (β-hCG)",a:"اختبار حمل (سيدة في سن الإنجاب)",t:"lab"},
+ semen:{n:"Semen analysis ×2",a:"تحليل سائل منوي مرتين",t:"lab"},
+ horm:{n:"FSH / LH / Testosterone / Prolactin",a:"الهرمونات",t:"lab"},
+ karyo:{n:"Karyotype",a:"تحليل الكروموسومات",t:"lab"},
+ ymd:{n:"Y-chromosome microdeletion",a:"حذف كروموسوم Y",t:"lab"},
+ us:{n:"Abdominopelvic ultrasound",a:"سونار بطن وحوض",t:"rad"},
+ trus:{n:"Prostate volume (TRUS/US) + PVR",a:"حجم البروستاتا والبول المتبقي",t:"rad"},
+ pvr:{n:"Post-void residual (US)",a:"قياس البول المتبقي بالسونار",t:"rad"},
+ rgu:{n:"Retrograde ± voiding urethrogram",a:"أشعة بالصبغة على مجرى البول (طول ومكان الضيق)",t:"rad"},
+ mri:{n:"mpMRI prostate",a:"رنين متعدد المقاطع للبروستاتا",t:"rad"},
+ bone:{n:"Bone scan / PSMA PET",a:"مسح العظام أو PSMA",t:"rad"},
+ ctcap:{n:"CT chest, abdomen & pelvis",a:"أشعة مقطعية صدر وبطن وحوض",t:"rad"},
+ nct:{n:"Non-contrast CT KUB",a:"أشعة مقطعية بدون صبغة",t:"rad"},
+ kub:{n:"Plain X-ray KUB",a:"أشعة عادية على المسالك",t:"rad"},
+ ctu:{n:"CT urography",a:"أشعة مقطعية بالصبغة على المسالك",t:"rad"},
+ ctren:{n:"Triphasic CT kidneys (mass protocol)",a:"مقطعية ثلاثية المراحل على الكلى",t:"rad"},
+ ctcyst:{n:"Contrast CT kidneys (Bosniak)",a:"مقطعية بالصبغة لتصنيف الكيس",t:"rad"},
+ reno:{n:"Isotope renogram (DTPA / MAG3)",a:"مسح ذري لوظيفة كل كلية",t:"rad"},
+ cxr:{n:"Chest X-ray",a:"أشعة على الصدر",t:"rad"},
+ dopp:{n:"Scrotal color Doppler",a:"دوبلر على الخصيتين",t:"rad"},
+ scrus:{n:"Scrotal ultrasound",a:"سونار على الصفن",t:"rad"},
+ ecg:{n:"ECG",a:"رسم قلب",t:"eval"},
+ echo:{n:"Echocardiography",a:"إيكو على القلب",t:"eval"},
+ cardio:{n:"Cardiology clearance",a:"موافقة طبيب القلب",t:"eval"},
+ chest:{n:"Chest clearance / PFT",a:"موافقة الصدر ووظائف التنفس",t:"eval"},
+ nephro:{n:"Nephrology opinion",a:"رأي أخصائي الكلى",t:"eval"},
+ ac:{n:"Anticoagulants / antiplatelets stopped",a:"إيقاف أدوية السيولة في موعدها",t:"eval"},
+ anes:{n:"Anesthesia fitness",a:"لياقة التخدير",t:"eval"},
+ consent:{n:"Informed consent signed",a:"إقرار الموافقة موقّع",t:"eval"},
+ ipss:{n:"IPSS score",a:"استبيان أعراض البروستاتا",t:"eval"},
+ flow:{n:"Uroflowmetry",a:"قياس سريان البول",t:"eval"},
+ uds:{n:"Urodynamic study",a:"ديناميكا التبول",t:"eval"},
+ diary:{n:"Bladder diary (3 days)",a:"مذكرة التبول لثلاثة أيام",t:"eval"},
+ cisc:{n:"CISC teaching & acceptance",a:"التدريب على القسطرة الذاتية وقبول المريض لها",t:"eval"},
+ cysrep:{n:"Cystoscopy report",a:"تقرير منظار المثانة",t:"eval"},
+ int2w:{n:"≥ 2 weeks since TURBT, no gross hematuria",a:"مرور أسبوعين على المنظار وعدم وجود دم بالبول",t:"eval"},
+ stoma:{n:"Stoma site marking",a:"تحديد مكان الفتحة البولية",t:"eval"},
+ bowel:{n:"Bowel preparation / ERAS plan",a:"تجهيز الأمعاء",t:"eval"},
+ stentd:{n:"Stent insertion date documented",a:"تاريخ تركيب الدعامة",t:"eval"},
+ ivf:{n:"ICSI coordination with IVF center",a:"التنسيق مع مركز الحقن المجهري",t:"eval"}
+};
+const TYPES=[["lab","تحاليل معملية"],["rad","أشعة"],["eval","تقييم وموافقات"]];
+const COMMON=["cbc","coag","renal","rbs","viral","ua","ecg","anes","consent"];
+const MAJOR=["cbc","coag","renal","rbs","viral","ua","ecg","anes","consent","lytes","lft","bg","cxr","echo"];
+
+/* shared patient-instruction lines */
+const AC_STOP="أدوية السيولة (أسبرين، كلوبيدوجريل، وارفارين، وأدوية السيولة الحديثة) تُوقف بالمدة التي يحددها الطبيب وطبيب القلب فقط.";
+const UC_STERILE="مزرعة البول يجب أن تكون معقمة قبل العملية؛ إذا كانت إيجابية يُعالج الالتهاب بالمضاد الحيوي المناسب أولًا.";
+const FEVER="حرارة أعلى من ٣٨ درجة أو رعشة.";
+const RETEN="عدم القدرة على التبول أو انسداد القسطرة.";
+const CLOTS="نزيف شديد في البول أو جلطات كبيرة.";
+const DVT="ضيق في التنفس أو ألم بالصدر أو تورم وألم في الساق.";
+const WOUND="احمرار أو صديد أو إفرازات من الجرح.";
+const PRE_COMMON=[
+ "الصيام عن الطعام ٨ ساعات قبل العملية، ويُسمح بالماء فقط حتى ساعتين قبلها، إلا إذا حدد طبيب التخدير غير ذلك.",
+ "أحضر معك جميع التحاليل والأشعات (الأفلام والتقارير والأسطوانات) وقائمة بكل أدويتك.",
+ "أدوية الضغط تؤخذ صباح العملية بقليل من الماء. أقراص السكر لا تؤخذ صباح العملية، والإنسولين حسب تعليمات طبيب التخدير.",
+ "لا توقف أي دواء للقلب أو السيولة من نفسك، والتزم بما يحدده الطبيب.",
+ "الاستحمام ليلة العملية، وعدم ارتداء مجوهرات أو طلاء أظافر أو عدسات لاصقة.",
+ "الحضور مع مرافق في الموعد الذي يحدده المستشفى."];
+const PRE_ALERT=[
+ "حرارة أو أعراض برد أو كحة أو ضيق في التنفس.",
+ "حرقان أو تعكر في البول أو رائحة كريهة (احتمال التهاب يستدعي العلاج قبل العملية).",
+ "ألم في الصدر أو خفقان.",
+ "احتباس البول، أو نزيف أو مغص شديد لا يستجيب للمسكن.",
+ "البدء في أي دواء جديد، خاصة أدوية السيولة."];
+
+const PROCS={
+ holep:{n:"HoLEP / ThuLEP",a:"استئصال البروستاتا بالليزر",req:["lytes","psa","uc","bg","trus","us","flow","ipss"],opt:["mri","cysrep"],
+  pre:[UC_STERILE,"إذا كنت تستخدم قسطرة دائمة، يتم تغييرها قبل العملية بأيام حسب تعليمات الطبيب.",AC_STOP],
+  warn:[RETEN,CLOTS,FEVER,"ألم شديد أسفل البطن لا يستجيب للمسكن."]},
+ turp:{n:"TURP",a:"استئصال البروستاتا بالمنظار",req:["lytes","psa","uc","bg","trus","us","flow","ipss"],opt:["mri"],
+  pre:[UC_STERILE,"إذا كنت تستخدم قسطرة دائمة، يتم تغييرها قبل العملية بأيام حسب تعليمات الطبيب.",AC_STOP],
+  warn:[RETEN,CLOTS,FEVER,"تشوش أو صداع شديد أو قيء بعد العملية مباشرة."]},
+ radpros:{n:"Radical prostatectomy",a:"الاستئصال الجذري للبروستاتا",base:MAJOR,req:["psa","path","mri","bone","ctcap","xm2","uc"],opt:[],
+  pre:["تجهيز الأمعاء: سوائل شفافة في اليوم السابق للعملية حسب التعليمات.","ابدأ تمارين قاع الحوض من الآن، فهي تساعد على سرعة استعادة التحكم في البول بعد العملية.","التوقف عن التدخين قبل العملية بأطول فترة ممكنة.",AC_STOP],
+  warn:["خروج القسطرة: لا تحاول إعادة تركيبها، واتصل بالطبيب فورًا.",FEVER,DVT,"انتفاخ البطن أو قيء متكرر أو توقف خروج الغازات.",WOUND]},
+ urs:{n:"URS + laser lithotripsy",a:"تفتيت حصوة الحالب بالمنظار والليزر",req:["uc","nct","kub"],opt:["us"],
+  pre:[UC_STERILE,"أحضر أحدث أشعة مقطعية؛ إذا مر عليها أكثر من شهر قد نحتاج أشعة حديثة لتحديد مكان الحصوة.","أخبر الطبيب إذا كانت لديك دعامة أو أنبوب كلوي من قبل.",AC_STOP],
+  warn:[FEVER+" (مع وجود الدعامة يحتاج تقييمًا عاجلًا)","ألم شديد في الجنب لا يستجيب للمسكن.","عدم القدرة على التبول.",CLOTS]},
+ pcnl:{n:"PCNL",a:"استخراج حصوة الكلى عن طريق الجلد",req:["lytes","uc","bg","xm2","nct","us","kub","cxr"],opt:["ctu","reno"],
+  pre:[UC_STERILE,"إيقاف أدوية السيولة ضروري قبل هذه العملية لتقليل خطر النزيف، بالمدة التي يحددها الطبيب.","يتم حجز الدم والتأكد من فصيلة الدم قبل العملية."],
+  warn:["نزيف شديد في البول أو من الجرح، أو غيار يتشبع بالدم بسرعة.",FEVER,DVT,"ألم شديد في الجنب أو انتفاخ البطن."]},
+ eswl:{n:"ESWL",a:"تفتيت الحصوات بالموجات التصادمية",base:["cbc","coag","renal","ua"],req:["uc","nct","kub","us","consent"],opt:["ecg"],
+  pre:["الصيام ٦ ساعات إذا كانت الجلسة بمهدئ أو تخدير.","أحضر أحدث أشعة عادية (KUB) ومقطعية.","إيقاف أدوية السيولة ضروري قبل الجلسة لتجنب النزيف حول الكلية.","للسيدات: لا تُجرى الجلسة أثناء الحمل."],
+  warn:[FEVER+" (يحتاج تقييمًا عاجلًا)","مغص شديد لا يستجيب للمسكن.","قيء متكرر يمنعك من الشرب.","عدم القدرة على التبول."]},
+ lapneph:{n:"Laparoscopic nephrectomy",a:"استئصال الكلية بالمنظار (جذري/جزئي)",base:MAJOR,req:["ca","xm2","ctren","ctcap","reno"],opt:["bone"],
+  pre:["تجهيز الأمعاء وسوائل شفافة في اليوم السابق حسب التعليمات.","أحضر الأشعات الأصلية (الأسطوانات) وليس التقارير فقط.","التوقف عن التدخين وتمارين التنفس العميق قبل العملية.",AC_STOP],
+  warn:[FEVER,"نزيف من الجرح أو دم في البول أو الدرنقة.",DVT,"قلة شديدة في كمية البول أو تورم بالجسم.","انتفاخ البطن أو قيء متكرر."]},
+ openneph:{n:"Open nephrectomy",a:"استئصال الكلية بالجراحة المفتوحة",base:MAJOR,req:["ca","xm2","ctren","ctcap","reno"],opt:["bone"],
+  pre:["تجهيز الأمعاء وسوائل شفافة في اليوم السابق حسب التعليمات.","أحضر الأشعات الأصلية (الأسطوانات) وليس التقارير فقط.","التوقف عن التدخين وتمارين التنفس العميق قبل العملية.",AC_STOP],
+  warn:[FEVER,WOUND,DVT,"قلة شديدة في كمية البول أو تورم بالجسم.","انتفاخ البطن أو قيء متكرر."]},
+ renalcyst:{n:"Lap. renal cyst deroofing",a:"إزالة كيس الكلى بالمنظار",req:["bg","ctcyst","us"],opt:["reno"],
+  pre:["أحضر الأشعة المقطعية بالصبغة الأصلية.",AC_STOP],
+  warn:[FEVER,"ألم شديد في الجنب أو البطن.","نزيف من الجرح أو دم في البول."]},
+ turbt:{n:"TURBT",a:"استئصال ورم المثانة بالمنظار",req:["uc","bg","us","ctu","cyto","cysrep"],opt:["cxr"],
+  pre:["أحضر تقرير منظار المثانة وأشعة الصبغة.",UC_STERILE,AC_STOP],
+  warn:[CLOTS,RETEN,FEVER,"ألم شديد أسفل البطن."]},
+ bcg:{n:"Intravesical BCG",a:"حقن BCG داخل المثانة",base:["cbc","renal","ua"],req:["uc","path","int2w"],opt:["lft"],
+  pre:["لا تشرب سوائل لمدة ٤ ساعات قبل الجلسة، وأفرغ المثانة قبلها مباشرة.","لا تُعطى الجلسة مع وجود التهاب بالبول أو دم بالبول أو حرارة؛ أبلغنا قبل الحضور.","أبلغ الطبيب بأي أدوية مناعة أو كورتيزون."],
+  warn:["حرارة أعلى من ٣٨٫٥ تستمر أكثر من ٤٨ ساعة، أو رعشة شديدة.","ألم بالمفاصل أو طفح جلدي أو كحة مستمرة.","حرقان شديد وكثرة تبول تستمر أكثر من ٤٨ ساعة.",CLOTS]},
+ radcyst:{n:"Radical cystectomy",a:"الاستئصال الجذري للمثانة",base:MAJOR,req:["ca","path","xm4","ctcap","ctu","chest","stoma","bowel"],opt:["bone"],
+  pre:["تجهيز الأمعاء حسب التعليمات (سوائل شفافة في اليوم السابق).","تحديد مكان الفتحة البولية على البطن قبل العملية.","تغذية جيدة غنية بالبروتين، والتوقف عن التدخين، وتمارين التنفس والمشي يوميًا.",AC_STOP],
+  warn:[FEVER,"توقف خروج البول من الفتحة أو القسطرة.","انتفاخ البطن أو قيء متكرر أو توقف خروج الغازات.",WOUND,DVT]},
+ dxcysto:{n:"Diagnostic cystoscopy",a:"منظار مثانة تشخيصي",base:["cbc","coag","renal","ua","consent"],req:["uc","us"],opt:["cyto","ctu","anes","viral","ecg"],
+  pre:["يُجرى غالبًا بمخدر موضعي ولا يحتاج صيامًا؛ الصيام مطلوب فقط إذا كان بتخدير كلي أو نصفي.",UC_STERILE,"أحضر الأشعات وتحاليل البول السابقة.",AC_STOP],
+  warn:[FEVER,"عدم القدرة على التبول.",CLOTS,"حرقان شديد يستمر أكثر من ٤٨ ساعة."]},
+ cysto:{n:"Stent removal",a:"إزالة الدعامة بالمنظار",base:["cbc","coag","renal","ua","consent"],req:["uc","kub"],opt:["stentd","anes","viral"],
+  pre:["لا تتأخر عن موعد إزالة الدعامة؛ تركها مدة أطول يعرضها للتكلس.","أحضر أشعة KUB حديثة.",UC_STERILE],
+  warn:[FEVER,"ألم شديد في الجنب بعد إزالة الدعامة.","عدم القدرة على التبول."]},
+ botox:{n:"Intravesical Botox injection",a:"حقن البوتوكس بالمثانة",base:["cbc","coag","renal","rbs","ua","consent"],req:["uc","uds","diary","pvr","cisc","us"],opt:["cyto","anes","ecg","viral"],
+  pre:["مزرعة البول يجب أن تكون معقمة قبل الحقن، وقد يُعطى مضاد حيوي وقائي.","التدريب على القسطرة الذاتية المتقطعة قبل الحقن، لاحتمال الحاجة إليها مؤقتًا بعده.","أحضر مذكرة التبول ونتيجة ديناميكا التبول.","أبلغ الطبيب إذا كان لديك مرض بالأعصاب والعضلات (مثل الوهن العضلي) أو تتناول مضادات حيوية من مجموعة الأمينوجليكوزيد.",AC_STOP],
+  warn:["صعوبة أو عدم القدرة على التبول، أو إحساس بعدم تفريغ المثانة.","حرقان وحرارة أو تعكر البول (التهاب بول).","ضعف عام شديد أو صعوبة في البلع أو التنفس أو زغللة/ازدواج في الرؤية: حالة طارئة نادرة.",CLOTS]},
+ viu:{n:"Optical internal urethrotomy (VIU)",a:"شق مجرى البول بالمنظار",req:["uc","flow","rgu","pvr"],opt:["us","cysrep"],
+  pre:[UC_STERILE,"أحضر أشعة الصبغة على مجرى البول (RGU) الأصلية.","إذا كان لديك أنبوب فوق العانة، أحضر تقرير تركيبه ولا تزله.","قد يُطلب منك بعد العملية عمل قسطرة ذاتية متقطعة لفترة للحفاظ على النتيجة، وسيتم تدريبك عليها.",AC_STOP],
+  warn:["ضعف شديد في اندفاع البول أو عدم القدرة على التبول بعد إزالة القسطرة.","نزيف من مجرى البول لا يتوقف.",FEVER,"تورم في كيس الصفن أو منطقة العجان."]},
+ varico:{n:"Microsurgical varicocelectomy",a:"ربط دوالي الخصية بالميكروسكوب",req:["dopp","semen"],opt:["horm"],
+  pre:["الامتناع عن القذف ٣–٥ أيام قبل تحليل السائل المنوي.","لا تحلق المنطقة بشفرة قبل العملية؛ يتم التجهيز في المستشفى.","أحضر ملابس داخلية ضاغطة (حاملة للصفن)."],
+  warn:["تورم كبير ومتزايد في كيس الصفن.",FEVER,WOUND,"ألم شديد لا يستجيب للمسكن."]},
+ tese:{n:"Micro-TESE",a:"استخراج الحيوانات المنوية من الخصية",req:["semen","horm","dopp","karyo","ymd","ivf"],opt:[],
+  pre:["التنسيق مع مركز الحقن المجهري على موعد العملية وطريقة حفظ العينة.","أحضر تحاليل الهرمونات والكروموسومات وحذف كروموسوم Y.","قد يُعطى علاج هرموني قبل العملية حسب الحالة.","أحضر ملابس داخلية ضاغطة (حاملة للصفن)."],
+  warn:["تورم كبير ومتزايد في كيس الصفن.",FEVER,WOUND,"ألم شديد لا يستجيب للمسكن."]},
+ hydro:{n:"Hydrocelectomy",a:"استئصال القيلة المائية",req:["scrus"],opt:[],
+  pre:["أحضر سونار الصفن.","أحضر ملابس داخلية ضاغطة (حاملة للصفن).",AC_STOP],
+  warn:["تورم كبير ومتزايد في كيس الصفن.",FEVER,WOUND]}
+};
+const GROUPS=[["البروستاتا",["holep","turp","radpros"]],["الحصوات",["urs","pcnl","eswl"]],["الكلى",["lapneph","openneph","renalcyst"]],["المثانة ومجرى البول",["dxcysto","turbt","bcg","radcyst","botox","viu","cysto"]],["الجراحات التناسلية والعقم",["varico","tese","hydro"]]];
+const CO=[["dm","سكري","hba1c"],["htn","ضغط",null],["cardiac","أمراض قلب","echo,cardio"],["ac","أدوية سيولة","ac"],["ckd","قصور كلوي","nephro,lytes"],["chest","أمراض صدرية","chest,cxr"]];
+const HOSP=["Welcare","مستشفى الصفا","المستشفى الفرنساوي","مستشفى الأفق","معهد ناصر","القصر العيني"];
+const DR={name:"أ.د. محمد جلال الشيخ",title:"أستاذ جراحة المسالك البولية والتناسلية – كلية طب قصر العيني",foot:"عيادة فيصل: ٢٠ شارع فيصل · ٠١٠٢٠٨٥٧٢٧٢"};
+
+/* ---------- file store (IndexedDB) ---------- */
+const DB=(()=>{let op;
+ function open(){return op||(op=new Promise((res,rej)=>{const r=indexedDB.open("preop-files",1);r.onupgradeneeded=()=>r.result.createObjectStore("files");r.onsuccess=()=>res(r.result);r.onerror=()=>{op=null;rej(r.error)}}))}
+ async function run(mode,fn){const db=await open();return new Promise((res,rej)=>{const t=db.transaction("files",mode);const r=fn(t.objectStore("files"));t.oncomplete=()=>res(r&&r.result);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)})}
+ return{put:(id,v)=>run("readwrite",s=>s.put(v,id)),get:id=>run("readonly",s=>s.get(id)),del:id=>run("readwrite",s=>s.delete(id)).catch(()=>{})};
+})();
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+const urlCache={};
+async function fileURL(id){if(urlCache[id])return urlCache[id];const r=await DB.get(id);if(!r)return null;return urlCache[id]=URL.createObjectURL(new Blob([r.buf],{type:r.type}))}
+async function toJpeg(file){
+ const u=URL.createObjectURL(file);
+ try{
+  const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error("صيغة الصورة غير مدعومة"));i.src=u});
+  const sc=Math.min(1,2200/Math.max(img.naturalWidth,img.naturalHeight));
+  const c=document.createElement("canvas");c.width=Math.round(img.naturalWidth*sc);c.height=Math.round(img.naturalHeight*sc);
+  const g=c.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,c.width,c.height);g.drawImage(img,0,0,c.width,c.height);
+  return await new Promise(r=>c.toBlob(r,"image/jpeg",.85));
+ }finally{URL.revokeObjectURL(u)}
+}
+
+/* ---------- state ---------- */
+const KEY="preop.v1";
+let patients=[],view={name:"list",id:null,filter:"all"},pdfFiles=null;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid=()=>Math.random().toString(36).slice(2,10);
+function save(){try{localStorage.setItem(KEY,JSON.stringify(patients))}catch(e){}}
+function norm(p){p.co=p.co||{};p.inv=p.inv||{};p.custom=p.custom||[];p.att=p.att||{};if(p.optInstr===undefined)p.optInstr=true;if(p.optAtt===undefined)p.optAtt=true;if(p.proc==="cysto"&&!PROCS.cysto)p.proc="dxcysto";return p}
+function load(){try{const r=localStorage.getItem(KEY);if(r){patients=JSON.parse(r).map(norm);return}}catch(e){} patients=seed().map(norm);save()}
+function dPlus(n){const d=new Date();d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}
+function blank(){return norm({id:uid(),name:"",age:"",sex:"m",phone:"",fileNo:"",hospital:HOSP[0],date:dPlus(7),proc:"holep",dx:"",comment:""})}
+function seed(){
+ const ex=o=>Object.assign(blank(),{example:true},o);
+ return[
+  ex({name:"مثال: الحاج عبد الرحمن سالم",age:68,hospital:"Welcare",date:dPlus(3),proc:"holep",dx:"تضخم حميد بالبروستاتا ١١٠ سم³ مع احتباس متكرر",co:{dm:true,ac:true},
+   inv:{cbc:{s:"ok",r:"Hb 13.1"},coag:{s:"ok",r:"INR 1.0"},renal:{s:"ok",r:"Cr 1.1"},rbs:{s:"ok",r:"162"},viral:{s:"ok",r:"Negative"},ua:{s:"ok"},ecg:{s:"ok"},lytes:{s:"ok"},psa:{s:"ok",r:"5.8 / F:T 0.24"},trus:{s:"ok",r:"110 cc, PVR 180 ml"},us:{s:"ok"},bg:{s:"ok",r:"A+"},ipss:{s:"ok",r:"27"}}}),
+  ex({name:"مثال: محمود فتحي",age:44,hospital:"مستشفى الصفا",date:dPlus(5),proc:"pcnl",dx:"حصوة قرنية بالكلية اليسرى ٣ سم",
+   inv:Object.fromEntries(["cbc","coag","renal","rbs","viral","ua","ecg","anes","consent","lytes","uc","bg","xm2","nct","us","kub","cxr"].map(k=>[k,{s:"ok"}]))}),
+  ex({name:"مثال: سعيد عبد الله",age:52,hospital:"مستشفى الأفق",date:dPlus(6),proc:"viu",dx:"ضيق بمجرى البول البصلي ١ سم",
+   inv:{cbc:{s:"ok"},coag:{s:"ok"},renal:{s:"ok"},rgu:{s:"ok",r:"Bulbar stricture 1 cm"},flow:{s:"ok",r:"Qmax 5 ml/s"}},custom:[{k:"c_ex1",n:"Urethral ultrasound",t:"rad"}]}),
+  ex({name:"مثال: أحمد يحيى (اليمن)",age:33,hospital:"المستشفى الفرنساوي",date:dPlus(9),proc:"tese",dx:"انعدام الحيوانات المنوية غير الانسدادي",
+   inv:{semen:{s:"ok",r:"Azoospermia ×2"},horm:{s:"ok",r:"FSH 24"},cbc:{s:"ok"},viral:{s:"ok"}}})
+ ];
+}
+
+/* ---------- logic ---------- */
+function invDef(p,k){if(INV[k])return INV[k];const c=(p.custom||[]).find(c=>c.k===k);return c?{n:c.n,a:"فحص مضاف",t:c.t,custom:true}:{n:k,a:"",t:"eval"}}
+function items(p){
+ const pr=PROCS[p.proc];if(!pr)return[];
+ const req=[...(pr.base||COMMON),...pr.req];
+ CO.forEach(([k,,add])=>{if(add&&p.co&&p.co[k])req.push(...add.split(","))});
+ const age=+p.age||30;if(p.sex==="f"&&age>=12&&age<=55)req.push("bhcg");
+ const seen=new Set(),out=[];
+ req.forEach(k=>{if(!seen.has(k)&&INV[k]){seen.add(k);out.push({k,req:true})}});
+ pr.opt.forEach(k=>{if(!seen.has(k)&&INV[k]){seen.add(k);out.push({k,req:false})}});
+ (p.custom||[]).forEach(c=>{if(!seen.has(c.k)){seen.add(c.k);out.push({k:c.k,req:true,custom:true})}});
+ return out;
+}
+function status(p,it){const v=p.inv[it.k];return v&&v.s?v.s:(it.req?"miss":"na")}
+function missing(p){return items(p).filter(it=>status(p,it)==="miss")}
+function attList(p){const out=[];items(p).forEach(it=>(p.att[it.k]||[]).forEach(f=>out.push({it,f})));return out}
+function groupOf(proc){return GROUPS.findIndex(g=>g[1].includes(proc))}
+function fmtDate(d){if(!d)return"لم يحدد";try{return new Date(d+"T12:00").toLocaleDateString("ar-EG",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}catch(e){return d}}
+function procName(k){const p=PROCS[k];return p?`${p.a} (${p.n})`:""}
+function label(p,k){const d=invDef(p,k);return d.custom?d.n:`${d.a} – ${d.n}`}
+function autoComment(p){
+ const m=missing(p);
+ if(!m.length)return"جميع الفحوصات المطلوبة متوفرة، والحالة جاهزة للعملية.";
+ return`الحالة غير مكتملة. المطلوب استكماله قبل العملية (${m.length}):\n`+m.map(it=>`• ${label(p,it.k)}`).join("\n");
+}
+
+/* ---------- list view ---------- */
+function renderList(){
+ const f=view.filter;
+ const list=patients.filter(p=>f==="all"||String(groupOf(p.proc))===f).sort((a,b)=>(a.date||"9").localeCompare(b.date||"9"));
+ const ready=patients.filter(p=>!missing(p).length).length;
+ let h=`<header class="top"><h1>تجهيز ما قبل العمليات<span class="sub">${esc(DR.name)}</span></h1><button class="btn primary" id="add">+ مريض جديد</button></header>
+ <div class="summary"><div class="stat"><b>${patients.length}</b><span>حالات مسجلة</span></div><div class="stat ok"><b>${ready}</b><span>جاهزة للعملية</span></div><div class="stat bad"><b>${patients.length-ready}</b><span>بها نواقص</span></div></div>
+ <div class="chips" role="toolbar"><button class="chip" data-f="all" aria-pressed="${f==="all"}">الكل</button>${GROUPS.map((g,i)=>`<button class="chip" data-f="${i}" aria-pressed="${f===String(i)}">${g[0]}</button>`).join("")}</div>`;
+ if(!list.length)h+=`<div class="empty">لا توجد حالات في هذا القسم.<br>اضغط «+ مريض جديد» لإضافة أول حالة.</div>`;
+ GROUPS.forEach((g,gi)=>{
+  const ps=list.filter(p=>groupOf(p.proc)===gi);if(!ps.length)return;
+  h+=`<div class="group-h"><h2>${g[0]}</h2><span>${ps.length}</span></div><div class="cards">`+ps.map(p=>{
+   const m=missing(p).length,na=attList(p).length;
+   return`<button class="card ${m?"":"ready"}" data-id="${p.id}"><span class="nm">${esc(p.name||"بدون اسم")}${p.example?'<span class="tag">مثال</span>':""}</span>
+   <span class="pill ${m?"bad":"ok"}">${m?`ناقص ${m}`:"جاهز"}</span>
+   <span class="meta">${esc(PROCS[p.proc]?.n||"")} · ${esc(p.hospital||"")} · ${esc(fmtDate(p.date))}${na?` · ${na} ملف`:""}</span></button>`}).join("")+`</div>`;
+ });
+ if(patients.some(p=>p.example))h+=`<p class="note">الحالات المعلّمة «مثال» للتوضيح فقط. <button class="link" id="clearEx">حذف الأمثلة</button></p>`;
+ h+=`<p class="note">تُحفظ الحالات والملفات على هذا الجهاز فقط. أضف الصفحة إلى الشاشة الرئيسية في Safari للحفاظ على الملفات.</p>`;
+ $("app").innerHTML=h;
+ $("add").onclick=()=>{const p=blank();patients.unshift(p);save();openCase(p.id)};
+ document.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{view.filter=b.dataset.f;renderList()});
+ document.querySelectorAll(".card").forEach(b=>b.onclick=()=>openCase(b.dataset.id));
+ const ce=$("clearEx");if(ce)ce.onclick=()=>{patients.filter(p=>p.example).forEach(dropFiles);patients=patients.filter(p=>!p.example);save();renderList()};
+}
+function dropFiles(p){Object.values(p.att||{}).flat().forEach(f=>DB.del(f.id))}
+function openCase(id){view.name="edit";view.id=id;pdfFiles=null;renderEdit();window.scrollTo(0,0)}
+function cur(){return patients.find(p=>p.id===view.id)}
+
+/* ---------- editor ---------- */
+function renderEdit(){
+ const p=cur();if(!p){view.name="list";return renderList()}
+ const opt=GROUPS.map(([g,ks])=>`<optgroup label="${g}">`+ks.map(k=>`<option value="${k}" ${p.proc===k?"selected":""}>${PROCS[k].a} – ${PROCS[k].n}</option>`).join("")+`</optgroup>`).join("");
+ const hosp=[...new Set([...HOSP,p.hospital].filter(Boolean))].map(h=>`<option ${p.hospital===h?"selected":""}>${esc(h)}</option>`).join("");
+ $("app").innerHTML=`<header class="top"><button class="btn" id="back" aria-label="رجوع">→ الحالات</button><h1 id="hdrName">${esc(p.name||"حالة جديدة")}</h1></header>
+ <div id="alarm"></div>
+ <section class="sec"><h2>بيانات المريض</h2><div class="grid">
+  <label class="f full">الاسم<input class="in" id="f_name" value="${esc(p.name)}" dir="auto"></label>
+  <label class="f">السن<input class="in" id="f_age" inputmode="numeric" value="${esc(p.age)}"></label>
+  <div class="f">النوع<div class="seg" id="sex"><button type="button" data-v="m" aria-pressed="${p.sex!=="f"}">ذكر</button><button type="button" data-v="f" aria-pressed="${p.sex==="f"}">أنثى</button></div></div>
+  <label class="f">رقم واتساب<input class="in" id="f_phone" inputmode="tel" dir="ltr" placeholder="01xxxxxxxxx أو +966…" value="${esc(p.phone)}"></label>
+  <label class="f">رقم الملف<input class="in" id="f_fileNo" value="${esc(p.fileNo)}" dir="auto"></label>
+  <label class="f">المستشفى<select class="in" id="f_hospital">${hosp}</select></label>
+  <label class="f">موعد العملية<input class="in" type="date" id="f_date" value="${esc(p.date)}"></label>
+  <label class="f full">العملية المخططة<select class="in" id="f_proc">${opt}</select></label>
+  <label class="f full">التشخيص / دواعي العملية<textarea class="in" id="f_dx" dir="auto">${esc(p.dx)}</textarea></label>
+ </div></section>
+ <section class="sec"><h2>الأمراض المصاحبة</h2><div class="toggles" id="co">${CO.map(([k,l])=>`<button type="button" class="tg" data-k="${k}" aria-pressed="${!!p.co[k]}">${l}</button>`).join("")}</div>
+ <p class="note" style="margin-top:8px">كل اختيار يضيف فحوصاته المطلوبة تلقائيًا.</p></section>
+ <section class="sec"><h2>الفحوصات المطلوبة <span id="procLbl" style="font-size:13px;color:var(--muted);font-weight:500"></span></h2><div id="inv"></div>
+  <div class="addc"><div class="invh">إضافة تحليل أو أشعة أخرى</div><div class="addrow">
+   <input class="in" id="c_name" dir="auto" placeholder="اسم التحليل أو الأشعة">
+   <select class="in" id="c_type"><option value="lab">تحليل</option><option value="rad">أشعة</option><option value="eval">فحص / تقييم</option></select>
+   <button class="btn primary" id="c_add" type="button">إضافة</button></div>
+   <p class="note" style="margin-top:6px">يُضاف كفحص مطلوب لهذا المريض، ويمكنك رفع ملفه بعد الإضافة.</p></div>
+ </section>
+ <section class="sec instr"><h2>تعليمات المريض وعلامات الخطر</h2><div id="instr"></div></section>
+ <section class="sec"><h2>التعليق الختامي</h2><div class="autocomment" id="auto"></div>
+  <label class="f">تعليق إضافي من الطبيب<textarea class="in" id="f_comment" dir="auto" placeholder="مثال: إيقاف الأسبرين ٥ أيام قبل العملية">${esc(p.comment)}</textarea></label></section>
+ <section class="sec"><h2>ملف PDF</h2>
+  <div class="opts"><label class="chk"><input type="checkbox" id="o_instr" ${p.optInstr?"checked":""}>إرفاق تعليمات المريض وعلامات الخطر</label>
+  <label class="chk"><input type="checkbox" id="o_att" ${p.optAtt?"checked":""}>دمج ملفات التحاليل والأشعات المرفوعة داخل نفس الملف <span id="attCount" style="color:var(--muted)"></span></label></div>
+  <div class="preview-wrap" style="margin-top:12px"><div class="sheet" id="sheetPrev"></div></div></section>
+ <section class="sec"><h2>حذف الحالة</h2><button class="btn danger" id="del">حذف هذه الحالة وملفاتها</button></section>
+ <div class="bar"><div class="wrap"><button class="btn primary" id="mkPdf">إنشاء PDF</button><button class="btn" id="shPdf" disabled>إرسال PDF عبر واتساب</button><a class="btn" id="waTxt" target="_blank" rel="noopener">إرسال النواقص كرسالة</a><div id="msg" style="display:contents"></div></div></div>`;
+ $("back").onclick=()=>{view.name="list";renderList();window.scrollTo(0,0)};
+ ["name","age","phone","fileNo","hospital","date","proc","dx","comment"].forEach(k=>{
+  const el=$("f_"+k);el.addEventListener(el.tagName==="SELECT"||el.type==="date"?"change":"input",()=>{p[k]=el.value;p.example=false;save();changed(k)});
+ });
+ document.querySelectorAll("#sex button").forEach(b=>b.onclick=()=>{p.sex=b.dataset.v;save();document.querySelectorAll("#sex button").forEach(x=>x.setAttribute("aria-pressed",x===b));changed("sex")});
+ document.querySelectorAll("#co .tg").forEach(b=>b.onclick=()=>{p.co[b.dataset.k]=!p.co[b.dataset.k];b.setAttribute("aria-pressed",!!p.co[b.dataset.k]);save();changed("co")});
+ $("o_instr").onchange=e=>{p.optInstr=e.target.checked;save();changed()};
+ $("o_att").onchange=e=>{p.optAtt=e.target.checked;save();changed()};
+ const addC=()=>{const n=$("c_name").value.trim();if(!n){$("c_name").focus();return}
+  p.custom.push({k:"c_"+uid(),n,t:$("c_type").value});p.example=false;save();$("c_name").value="";renderInv();changed()};
+ $("c_add").onclick=addC;$("c_name").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();addC()}};
+ const del=$("del");del.onclick=()=>{if(!del.classList.contains("armed")){del.classList.add("armed");del.textContent="اضغط مرة أخرى لتأكيد الحذف";setTimeout(()=>{del.classList.remove("armed");del.textContent="حذف هذه الحالة وملفاتها"},4000);return}
+  dropFiles(p);patients=patients.filter(x=>x.id!==p.id);save();view.name="list";renderList()};
+ $("mkPdf").onclick=makePdf;$("shPdf").onclick=sharePdf;
+ renderInv();renderInstr();refresh();
+}
+function changed(k){
+ pdfFiles=null;$("shPdf").disabled=true;
+ if(k==="name")$("hdrName").textContent=cur().name||"حالة جديدة";
+ if(["proc","co","sex","age"].includes(k))renderInv();
+ if(k==="proc")renderInstr();
+ refresh();
+}
+function renderInstr(){
+ const pr=PROCS[cur().proc];
+ $("instr").innerHTML=`<h3>تعليمات قبل العملية</h3><ul>${[...PRE_COMMON,...pr.pre].map(t=>`<li>${esc(t)}</li>`).join("")}</ul>
+ <div class="dg"><h3>أبلغ الطبيب قبل الحضور إذا ظهر</h3><ul>${PRE_ALERT.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>
+ <h3>علامات الخطر بعد ${esc(pr.a)}</h3><ul>${pr.warn.map(t=>`<li>${esc(t)}</li>`).join("")}</ul></div>`;
+}
+function attChip(f){
+ const img=f.type.startsWith("image/");
+ return`<span class="att"><a data-att="${f.id}" target="_blank" rel="noopener">${img?`<img data-thumb="${f.id}" alt="">`:`<span class="ty">PDF</span>`}<span class="fn">${esc(f.name)}</span></a><button type="button" data-del="${f.id}" aria-label="حذف الملف">×</button></span>`;
+}
+function renderInv(){
+ const p=cur(),its=items(p);
+ $("procLbl").textContent="· "+(PROCS[p.proc]?.n||"");
+ $("inv").innerHTML=TYPES.map(([t,l])=>{
+  const rows=its.filter(it=>invDef(p,it.k).t===t);if(!rows.length)return"";
+  return`<div class="invh">${l}</div>`+rows.map(it=>{
+   const s=status(p,it),d=invDef(p,it.k),r=p.inv[it.k]?.r||"",files=p.att[it.k]||[];
+   return`<div class="row ${s==="miss"?"miss":""}" data-k="${it.k}">
+    <div class="n"><b>${esc(d.n)}</b><i>${esc(d.a)}</i>${it.custom?' <span class="ctag">· مضاف</span>':it.req?"":' <span class="opt">· حسب الحالة</span>'}</div>
+    <div class="seg"><button type="button" class="o" data-s="ok" aria-pressed="${s==="ok"}">متوفر</button><button type="button" class="m" data-s="miss" aria-pressed="${s==="miss"}">ناقص</button><button type="button" class="x" data-s="na" aria-pressed="${s==="na"}">لا يلزم</button></div>
+    <div class="extra">${s==="ok"?`<input class="in res" data-r="${it.k}" dir="auto" placeholder="النتيجة (اختياري)" value="${esc(r)}">`:""}
+     ${files.map(attChip).join("")}
+     <label class="up">+ رفع ملف<input type="file" data-up="${it.k}" accept="application/pdf,image/*" multiple></label>
+     ${it.custom?`<button type="button" class="link bad" data-delc="${it.k}">حذف الفحص</button>`:""}</div></div>`}).join("");
+ }).join("");
+ const box=$("inv");
+ box.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{
+  const k=b.closest(".row").dataset.k;p.inv[k]=Object.assign(p.inv[k]||{},{s:b.dataset.s});p.example=false;save();renderInv();changed();
+ });
+ box.querySelectorAll("input[data-r]").forEach(el=>el.oninput=()=>{const k=el.dataset.r;p.inv[k]=Object.assign(p.inv[k]||{s:"ok"},{r:el.value});save();changed()});
+ box.querySelectorAll("input[data-up]").forEach(el=>el.onchange=()=>upload(p,el.dataset.up,[...el.files],el.closest(".up")));
+ box.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
+  const id=b.dataset.del;Object.keys(p.att).forEach(k=>p.att[k]=p.att[k].filter(f=>f.id!==id));DB.del(id);save();renderInv();changed();
+ });
+ box.querySelectorAll("[data-delc]").forEach(b=>b.onclick=()=>{
+  const k=b.dataset.delc;(p.att[k]||[]).forEach(f=>DB.del(f.id));delete p.att[k];delete p.inv[k];p.custom=p.custom.filter(c=>c.k!==k);save();renderInv();changed();
+ });
+ box.querySelectorAll("a[data-att]").forEach(async a=>{const u=await fileURL(a.dataset.att).catch(()=>null);if(u)a.href=u;const im=a.querySelector("img");if(im&&u)im.src=u});
+}
+async function upload(p,k,files,lbl){
+ if(!files.length)return;
+ lbl&&lbl.classList.add("busy");say("");
+ const errs=[];
+ for(const file of files){
+  try{
+   let blob=file,type=file.type,name=file.name||"file";
+   const isPdf=type==="application/pdf"||/\.pdf$/i.test(name);
+   if(isPdf)type="application/pdf";
+   else if(type.startsWith("image/")||/\.(heic|heif|jpe?g|png|webp)$/i.test(name)){blob=await toJpeg(file);type="image/jpeg";name=name.replace(/\.[^.]+$/,"")+".jpg"}
+   else throw new Error("يُقبل PDF أو صورة فقط");
+   if(blob.size>40*1024*1024)throw new Error("الملف أكبر من ٤٠ ميجا");
+   const id=uid(),buf=await blob.arrayBuffer();
+   await DB.put(id,{buf,type,name});
+   (p.att[k]=p.att[k]||[]).push({id,name,type,size:buf.byteLength});
+   p.inv[k]=Object.assign(p.inv[k]||{},{s:"ok"});
+  }catch(e){errs.push(`${file.name}: ${e.message||"تعذّر الحفظ"}`)}
+ }
+ p.example=false;save();renderInv();changed();
+ if(errs.length)say("لم يتم رفع: "+errs.map(esc).join("، "));
+}
+function refresh(){
+ const p=cur(),m=missing(p);
+ $("alarm").innerHTML=m.length
+  ?`<div class="alarm bad" role="alert"><span class="ic"><span>!</span></span><div class="tx">ناقص ${m.length} من الفحوصات المطلوبة<small>${m.map(it=>esc(invDef(p,it.k).n)).join(" · ")}</small></div></div>`
+  :`<div class="alarm ok"><span class="ic"><span>✓</span></span><div class="tx">الحالة جاهزة للعملية<small>كل الفحوصات المطلوبة متوفرة.</small></div></div>`;
+ $("auto").textContent=autoComment(p);
+ const n=attList(p).length;$("attCount").textContent=n?`(${n} ملف)`:"(لا توجد ملفات مرفوعة)";
+ $("sheetPrev").innerHTML=sheetHTML(p);
+ $("waTxt").href=waLink(p);
+}
+
+/* ---------- sheet / PDF / WhatsApp ---------- */
+function sheetHTML(p){
+ const its=items(p),m=missing(p),pr=PROCS[p.proc];
+ const co=CO.filter(([k])=>p.co[k]).map(([,l])=>l).join("، ")||"لا يوجد";
+ const today=new Date().toLocaleDateString("ar-EG",{day:"numeric",month:"long",year:"numeric"});
+ const tables=TYPES.map(([t,l])=>{
+  const rows=its.filter(it=>invDef(p,it.k).t===t);if(!rows.length)return"";
+  return`<h3>${l}</h3><table><tr><th>الفحص</th><th>البيان</th><th>الحالة</th><th>النتيجة</th><th>مرفق</th></tr>`+rows.map(it=>{
+   const s=status(p,it),d=invDef(p,it.k),na=(p.att[it.k]||[]).length;
+   return`<tr class="${s==="miss"?"m":""}"><td class="en">${esc(d.n)}</td><td>${esc(d.a)}</td><td class="st ${s==="ok"?"ok":""}">${s==="ok"?"متوفر":s==="miss"?"ناقص":"لا يلزم"}</td><td class="en">${esc(p.inv[it.k]?.r||"")}</td><td class="ac">${na||""}</td></tr>`}).join("")+`</table>`;
+ }).join("");
+ const atts=attList(p);
+ const instr=p.optInstr?`<div class="sh-box"><h3>تعليمات قبل العملية</h3><ul>${[...PRE_COMMON,...pr.pre].map(t=>`<li>${esc(t)}</li>`).join("")}</ul></div>
+  <div class="sh-box dg"><h3>أبلغ الطبيب قبل الحضور إذا ظهر</h3><ul>${PRE_ALERT.map(t=>`<li>${esc(t)}</li>`).join("")}</ul></div>
+  <div class="sh-box dg"><h3>علامات الخطر بعد العملية (تستدعي التواصل الفوري)</h3><ul>${pr.warn.map(t=>`<li>${esc(t)}</li>`).join("")}</ul></div>`:"";
+ const attBlock=p.optAtt&&atts.length?`<div class="sh-box"><h3>الملفات المرفقة بعد هذه الصفحة (${atts.length})</h3><ol>${atts.map(({it,f})=>`<li>${esc(invDef(p,it.k).n)}: ${esc(f.name)}</li>`).join("")}</ol></div>`:"";
+ return`<div class="sh-head"><div class="dr">${esc(DR.name)}<small>${esc(DR.title)}</small></div><div class="ttl">تجهيز ما قبل العملية<small>${today}</small></div></div>
+ <div class="sh-pt">
+  <div class="w2"><span>اسم المريض</span><b>${esc(p.name||"—")}</b></div><div><span>السن / النوع</span><b>${esc(p.age||"—")} · ${p.sex==="f"?"أنثى":"ذكر"}</b></div><div><span>رقم الملف</span><b>${esc(p.fileNo||"—")}</b></div>
+  <div class="w2"><span>العملية المخططة</span><b>${esc(procName(p.proc))}</b></div><div><span>المستشفى</span><b>${esc(p.hospital||"—")}</b></div><div><span>موعد العملية</span><b>${esc(fmtDate(p.date))}</b></div>
+  <div class="w2"><span>التشخيص</span><b>${esc(p.dx||"—")}</b></div><div class="w2"><span>الأمراض المصاحبة</span><b>${esc(co)}</b></div>
+ </div>
+ <div class="sh-status ${m.length?"bad":"ok"}">${m.length?`غير مكتمل: ناقص ${m.length} من الفحوصات المطلوبة`:"مكتمل: الحالة جاهزة للعملية"}</div>
+ ${tables}${instr}${attBlock}
+ <div class="sh-comment"><h3>التعليق الختامي</h3><p>${esc(autoComment(p))}${p.comment?"\n\n"+esc(p.comment):""}</p></div>
+ <div class="sh-foot"><span>${esc(DR.foot)}</span><span>${esc(DR.name)}</span></div>`;
+}
+function normPhone(s){let d=String(s||"").replace(/[^\d+]/g,"");if(d.startsWith("+"))return d.slice(1);if(d.startsWith("00"))return d.slice(2);if(/^01\d{9}$/.test(d))return"20"+d.slice(1);return d}
+function waText(p){
+ const m=missing(p);
+ let t=`*${DR.name}*\nتجهيز ما قبل العملية\n\nالمريض: ${p.name||""}\nالعملية: ${procName(p.proc)}\nالمستشفى: ${p.hospital||""}\nالموعد: ${fmtDate(p.date)}\n\n`;
+ t+=m.length?`المطلوب استكماله قبل العملية:\n`+m.map(it=>`• ${label(p,it.k)}`).join("\n"):"جميع الفحوصات المطلوبة متوفرة، والحالة جاهزة للعملية.";
+ if(p.comment)t+=`\n\nملاحظات: ${p.comment}`;
+ return t;
+}
+function waLink(p){return`https://wa.me/${normPhone(p.phone)}?text=${encodeURIComponent(waText(p))}`}
+function say(t){const el=$("msg");if(el)el.innerHTML=t?`<p class="msg">${t}</p>`:""}
+function safeName(s){return s.replace(/[\\/:*?"<>|]/g,"-")}
+async function makePdf(){
+ const p=cur(),btn=$("mkPdf");
+ if(!window.html2canvas||!window.PDFLib){say("تعذّر تحميل أداة PDF. تأكد من الاتصال بالإنترنت ثم أعد المحاولة.");return}
+ btn.disabled=true;btn.textContent="جارٍ الإنشاء…";say("");
+ const node=document.createElement("div");node.className="sheet capture";node.innerHTML=sheetHTML(p);$("capture").appendChild(node);
+ try{
+  if(document.fonts&&document.fonts.ready)await document.fonts.ready;
+  const canvas=await html2canvas(node,{scale:2,backgroundColor:"#ffffff",windowWidth:794});
+  const {PDFDocument}=PDFLib,out=await PDFDocument.create();
+  const PW=595.28,PH=841.89,px=canvas.width/PW;
+  const top0=node.getBoundingClientRect().top,ratio=canvas.height/node.offsetHeight;
+  const cands=[...node.querySelectorAll("tr,li,h3,.sh-head,.sh-pt,.sh-status,.sh-box,.sh-comment")].map(e=>(e.getBoundingClientRect().bottom-top0)*ratio).sort((a,b)=>a-b);
+  let y=0,first=true;
+  while(y<canvas.height-4){
+   const tm=first?0:24,cap=Math.floor((PH-tm-22)*px);
+   let end=Math.min(y+cap,canvas.height);
+   if(end<canvas.height){const b=cands.filter(v=>v>y+cap*.4&&v<=end).pop();if(b)end=Math.ceil(b)+2}
+   const c=document.createElement("canvas");c.width=canvas.width;c.height=end-y;
+   const g=c.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,c.width,c.height);g.drawImage(canvas,0,-y);
+   const jpg=await out.embedJpg(c.toDataURL("image/jpeg",.9));
+   const h=c.height/px,pg=out.addPage([PW,PH]);pg.drawImage(jpg,{x:0,y:PH-tm-h,width:PW,height:h});
+   y=end;first=false;
+  }
+  const extra=[],failed=[];
+  if(p.optAtt){
+   for(const {f} of attList(p)){
+    const rec=await DB.get(f.id).catch(()=>null);if(!rec){failed.push(f.name);continue}
+    try{
+     if(rec.type==="application/pdf"){
+      const src=await PDFDocument.load(rec.buf,{ignoreEncryption:true});
+      (await out.copyPages(src,src.getPageIndices())).forEach(pg=>out.addPage(pg));
+     }else{
+      const im=await out.embedJpg(rec.buf),m=24,sc=Math.min((PW-2*m)/im.width,(PH-2*m)/im.height);
+      const w=im.width*sc,h=im.height*sc,pg=out.addPage([PW,PH]);pg.drawImage(im,{x:(PW-w)/2,y:(PH-h)/2,width:w,height:h});
+     }
+    }catch(e){extra.push(new File([rec.buf],f.name,{type:rec.type}));failed.push(f.name)}
+   }
+  }
+  const bytes=await out.save();
+  const name=safeName(`تجهيز ${p.name||"مريض"} - ${PROCS[p.proc].n}.pdf`);
+  pdfFiles=[new File([bytes],name,{type:"application/pdf"}),...extra];
+  $("shPdf").disabled=false;
+  say(`تم إنشاء الملف (${out.getPageCount()} صفحة). اضغط «إرسال PDF عبر واتساب» ثم اختر واتساب.`+(failed.length?`<br>تعذّر دمج: ${failed.map(esc).join("، ")}؛ سيُرسل كملف منفصل.`:""));
+ }catch(e){say("تعذّر إنشاء الملف: "+esc(e.message||e))}
+ finally{node.remove();btn.disabled=false;btn.textContent="إنشاء PDF"}
+}
+async function sharePdf(){
+ if(!pdfFiles)return;
+ try{
+  if(navigator.canShare&&navigator.canShare({files:pdfFiles})){await navigator.share({files:pdfFiles,title:pdfFiles[0].name});say("");return}
+  if(window.self!==window.top){say("المعاينة داخل Claude تمنع مشاركة الملفات. استخدم النسخة المرفوعة على GitHub لإرسال الـPDF، أو أرسل النواقص كرسالة نصية الآن.");return}
+  pdfFiles.forEach(f=>{const a=document.createElement("a");a.href=URL.createObjectURL(f);a.download=f.name;document.body.appendChild(a);a.click();a.remove()});
+  say("تم تنزيل الملف. أرسله من واتساب كمرفق.");
+ }catch(e){if(e&&e.name==="AbortError")return;say("المشاركة غير متاحة هنا. افتح النسخة المرفوعة على GitHub من Safari، أو أرسل النواقص كرسالة نصية.")}
+}
+
+load();renderList();
+</script>
+</body>
+</html>
